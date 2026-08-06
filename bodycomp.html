@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>身体成分档案 · 云端</title>
+<style>
+  :root{ --rose:#c98a8a; --sage:#8a9a82; --gold:#c9a96a; --ink:#5b5048; --paper:#f7f1e8; --line:#e7dcc8; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;background:linear-gradient(135deg,#fbf6ee,#f1e9dc);min-height:100vh;color:var(--ink);padding:28px 16px 60px;}
+  .wrap{max-width:760px;margin:0 auto;}
+  .deco{font-size:30px;margin-bottom:4px;}
+  h1{font-size:24px;letter-spacing:2px;color:var(--rose);font-weight:800;}
+  .sub{font-size:13px;color:#a99a86;margin:4px 0 22px;letter-spacing:1px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:22px 24px;box-shadow:0 10px 34px rgba(120,100,80,.12);margin-bottom:20px;position:relative;overflow:hidden;}
+  .card::before{content:"";position:absolute;top:-50px;right:-50px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(201,138,138,.14),transparent 70%);}
+  .sec{font-size:14px;color:var(--sage);letter-spacing:3px;font-weight:800;margin:6px 0 14px;display:flex;align-items:center;gap:8px;}
+  .sec::after{content:"";flex:1;height:1px;background:linear-gradient(to right,var(--line),transparent);}
+  label{display:block;font-size:12px;color:#a99a86;margin:10px 0 5px;letter-spacing:1px;}
+  input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fffdf8;color:var(--ink);font-size:14px;outline:none;}
+  input:focus{border-color:var(--sage);}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  button{margin-top:16px;width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--rose),#b97878);color:#fff;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;}
+  button:active{transform:translateY(1px);}
+  button.ghost{background:#fffdf8;color:var(--sage);border:1px solid var(--sage);}
+  .err{color:#c0584f;font-size:13px;margin-top:10px;line-height:1.6;}
+  .ok{color:var(--sage);font-size:13px;margin-top:10px;}
+  .hidden{display:none;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:9px 8px;text-align:center;border-bottom:1px solid #efe6d6;}
+  th{color:#a99a86;font-weight:600;letter-spacing:.5px;}
+  td.k{color:var(--sage);font-weight:600;text-align:left;}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;}
+  .item{background:#fffdf8;border:1px solid #ece2d0;border-radius:13px;padding:12px;text-align:center;}
+  .item .l{font-size:11px;color:#a99a86;letter-spacing:.5px;margin-bottom:5px;}
+  .item .v{font-size:22px;font-weight:800;color:var(--ink);}
+  .item .u{font-size:11px;color:#b3a690;font-weight:400;margin-left:2px;}
+  .item .n{font-size:10.5px;color:var(--rose);margin-top:3px;}
+  .item .n.ok{color:var(--sage);}
+  .pill{display:inline-block;background:rgba(138,154,130,.16);color:var(--sage);border-radius:8px;padding:2px 9px;font-size:11px;margin:3px 4px 0 0;}
+  .chart{width:100%;height:150px;background:#fffdf8;border:1px solid #ece2d0;border-radius:13px;margin-top:6px;}
+  .note{font-size:12px;color:#8a7c6c;line-height:1.7;border-top:1px dashed var(--line);padding-top:12px;margin-top:14px;}
+  .small{font-size:12px;color:#a99a86;}
+  a{color:var(--rose);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="deco">🌿</div>
+  <h1>身体成分档案</h1>
+  <div class="sub">读取你的云端健康数据 · 完整体测成分展示与趋势</div>
+
+  <!-- 登录 -->
+  <div class="card" id="loginCard">
+    <div class="sec">登录云端</div>
+    <label>GitHub 访问令牌 token（需 repo 权限）</label>
+    <input id="token" type="password" placeholder="ghp_...">
+    <div class="row">
+      <div>
+        <label>数据仓库 owner/repo</label>
+        <input id="repo" value="13621877589-sudo/health-archive-data">
+      </div>
+      <div>
+        <label>解密口令</label>
+        <input id="pass" type="password" placeholder="你的档案口令">
+      </div>
+    </div>
+    <button id="loginBtn">解锁档案</button>
+    <div class="err hidden" id="loginErr"></div>
+    <div class="note">数据与「健康档案」主站同源（同一个私有数据仓库），登录即可看到全部体测记录。本页为只读 + 补录视图，主站仍是最全入口。</div>
+  </div>
+
+  <!-- 主体 -->
+  <div class="card hidden" id="mainCard">
+    <div class="sec">基础信息</div>
+    <div id="profileBox"></div>
+
+    <div class="sec">最新体测成分（全部字段）</div>
+    <div class="grid" id="latestGrid"></div>
+
+    <div class="sec">体测记录表</div>
+    <div style="overflow-x:auto"><table id="wtTable"></table></div>
+
+    <div class="sec">趋势图</div>
+    <div class="small" style="margin-bottom:6px">体重（kg）</div>
+    <svg class="chart" id="chartW"></svg>
+    <div class="small" style="margin:14px 0 6px">体脂率 / 骨骼肌率（%）</div>
+    <svg class="chart" id="chartR"></svg>
+
+    <div class="sec">补录一条体测</div>
+    <div class="row">
+      <div><label>日期</label><input id="f_date" type="date"></div>
+      <div><label>体重(kg)</label><input id="f_w" type="number" step="0.1"></div>
+    </div>
+    <div class="row">
+      <div><label>体脂率(%)</label><input id="f_bf" type="number" step="0.1"></div>
+      <div><label>内脏脂肪</label><input id="f_vf" type="number" step="0.1"></div>
+    </div>
+    <div class="row">
+      <div><label>脂肪量(kg)</label><input id="f_fm" type="number" step="0.1"></div>
+      <div><label>骨骼肌率(%)</label><input id="f_smR" type="number" step="0.1"></div>
+    </div>
+    <div class="row">
+      <div><label>骨骼肌量(kg)</label><input id="f_smM" type="number" step="0.1"></div>
+      <div><label>皮下脂肪率(%)</label><input id="f_sfR" type="number" step="0.1"></div>
+    </div>
+    <div class="row">
+      <div><label>皮下脂肪量(kg)</label><input id="f_sfM" type="number" step="0.1"></div>
+      <div><label>骨量占比(%)</label><input id="f_bR" type="number" step="0.1"></div>
+    </div>
+    <div class="row">
+      <div><label>骨量(kg)</label><input id="f_bM" type="number" step="0.1"></div>
+      <div><label>蛋白质量(kg)</label><input id="f_pM" type="number" step="0.1"></div>
+    </div>
+    <button id="addBtn" class="ghost">保存到云端</button>
+    <div class="ok hidden" id="saveOk"></div>
+    <div class="err hidden" id="saveErr"></div>
+    <div class="note">保存会写回同一个云端数据仓库（自动复用原有加密参数重新加密）。</div>
+    <button id="logoutBtn" class="ghost" style="margin-top:8px;background:#fffdf8;color:#b3a690;border:1px solid var(--line)">退出登录</button>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const b64dec = s => Uint8Array.from(atob(s.replace(/\s/g,'')), c=>c.charCodeAt(0));
+const buf2b64 = b => { let s=''; for(const x of new Uint8Array(b)) s+=String.fromCharCode(x); return btoa(s); };
+const utf8ToB64 = str => buf2b64(new TextEncoder().encode(str));
+let CTX = {};
+
+async function deriveKey(pass, saltBuf){
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt:saltBuf, iterations:210000, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+
+async function ghGET(url, token){
+  const r = await fetch(url, {headers:{Authorization:'token '+token, Accept:'application/vnd.github+json', 'User-Agent':'web'}});
+  if(!r.ok) throw new Error('GitHub API '+r.status+' '+ (await r.text()).slice(0,120));
+  return r.json();
+}
+async function ghPUT(url, token, body){
+  const r = await fetch(url, {method:'PUT', headers:{Authorization:'token '+token, Accept:'application/vnd.github+json', 'Content-Type':'application/json', 'User-Agent':'web'}, body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('GitHub API PUT '+r.status+' '+ (await r.text()).slice(0,160));
+  return r.json();
+}
+
+async function decryptObj(raw, pass){
+  const salt = b64dec(raw.salt), iv = b64dec(raw.iv), ct = b64dec(raw.ct);
+  const key = await deriveKey(pass, salt);
+  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+async function encryptObj(obj, pass, saltB64, ivB64){
+  const salt = b64dec(saltB64), iv = b64dec(ivB64);
+  const key = await deriveKey(pass, salt);
+  const enc = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify(obj)));
+  return {v:1, salt:saltB64, iv:ivB64, ct: buf2b64(enc)};
+}
+
+$('loginBtn').onclick = async ()=>{
+  $('loginErr').classList.add('hidden');
+  const token=$('token').value.trim(), repo=$('repo').value.trim(), pass=$('pass').value;
+  if(!token||!repo||!pass){ $('loginErr').textContent='三项都要填哦～'; $('loginErr').classList.remove('hidden'); return; }
+  try{
+    const meta = await ghGET(`https://api.github.com/repos/${repo}/contents/data.json?t=${Date.now()}`, token);
+    const raw = JSON.parse(atob(meta.content.replace(/\s/g,'')));
+    const obj = await decryptObj(raw, pass);
+    CTX = {token, repo, pass, raw, obj, sha:meta.sha};
+    render(obj);
+    $('loginCard').classList.add('hidden');
+    $('mainCard').classList.remove('hidden');
+  }catch(e){ $('loginErr').textContent='登录失败：'+e.message; $('loginErr').classList.remove('hidden'); }
+};
+
+function render(obj){
+  const p = obj.profile||{};
+  const h = parseFloat(p.身高||0), w0 = parseFloat((obj.weights||[]).slice(-1)[0]?.体重||p.体重||0);
+  const bmi = (h&&w0)? (w0/((h/100)**2)).toFixed(1):'—';
+  $('profileBox').innerHTML = `<div class="grid">
+    <div class="item"><div class="l">姓名</div><div class="v" style="font-size:18px">${p.姓名||'—'}</div></div>
+    <div class="item"><div class="l">身高</div><div class="v">${p.身高||'—'}<span class="u">cm</span></div></div>
+    <div class="item"><div class="l">最新体重</div><div class="v">${w0||'—'}<span class="u">kg</span></div></div>
+    <div class="item"><div class="l">BMI</div><div class="v">${bmi}</div></div>
+    <div class="item"><div class="l">性别</div><div class="v" style="font-size:18px">${p.性别||'—'}</div></div>
+    <div class="item"><div class="l">记录数</div><div class="v">${(obj.weights||[]).length}<span class="u">条</span></div></div>
+  </div>`;
+
+  const ws = (obj.weights||[]).slice().sort((a,b)=>a.日期.localeCompare(b.日期));
+  const last = ws[ws.length-1]||{};
+  const fields = [
+    ['体重','kg',null],['体脂率','%','偏高(女正常约20–30%)'],
+    ['内脏脂肪','',lastSection('内脏脂肪')],['脂肪量','kg','约占体重 '+pct(last.脂肪量,last.体重)],
+    ['骨骼肌率','%','肌肉保有量不低'],['骨骼肌量','kg','约占体重 '+pct(last.骨骼肌量,last.体重)],
+    ['皮下脂肪率','%',null],['皮下脂肪量','kg','约占体重 '+pct(last.皮下脂肪量,last.体重)],
+    ['骨量占比','%','正常(成人约3–5%)'],['骨量','kg',null],
+    ['蛋白质量','kg','体脂秤估算']
+  ];
+  $('latestGrid').innerHTML = fields.map(([k,u,n])=>{
+    const v = last[k];
+    if(v===undefined) return '';
+    const ok = n && n.includes('正常')||n==='肌肉保有量不低';
+    return `<div class="item"><div class="l">${k}</div><div class="v">${v}<span class="u">${u}</span></div>${n?`<div class="n ${ok?'ok':''}">${n}</div>`:''}</div>`;
+  }).join('');
+
+  // 表
+  const cols = ['日期','体重','体脂率','内脏脂肪','脂肪量','骨骼肌率','骨骼肌量','皮下脂肪率','皮下脂肪量','骨量占比','骨量','蛋白质量'];
+  let html = '<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
+  ws.forEach(r=>{ html+='<tr>'+cols.map(c=>`<td class="${c==='日期'?'k':''}">${r[c]??'—'}</td>`).join('')+'</tr>'; });
+  $('wtTable').innerHTML = html;
+
+  drawLine($('chartW'), ws.map(r=>r.日期), ws.map(r=>parseFloat(r.体重)), '#c98a8a');
+  drawLine2($('chartR'), ws.map(r=>r.日期), ws.map(r=>parseFloat(r.体脂率)), ws.map(r=>parseFloat(r.骨骼肌率)));
+
+  $('f_date').value = last.日期 || new Date().toISOString().slice(0,10);
+}
+function pct(a,b){ const x=parseFloat(a),y=parseFloat(b); return (x&&y)?Math.round(x/y*100)+'%':'—'; }
+function lastSection(k){ if(k==='内脏脂肪') return '偏高(理想<9)'; return ''; }
+
+function drawLine(svg, xs, ys, color){
+  if(!ys.length||ys.some(isNaN)){ svg.innerHTML='<text x="10" y="80" fill="#b3a690" font-size="12">暂无足够数据</text>'; return; }
+  const W=svg.clientWidth||720, H=150, pad=24;
+  const min=Math.min(...ys), max=Math.max(...ys), span=(max-min)||1;
+  const X=i=> pad + i*(W-2*pad)/(ys.length-1||1);
+  const Y=v=> H-pad - (v-min)/span*(H-2*pad);
+  let pts = ys.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  let labels = xs.map((x,i)=>`<text x="${X(i).toFixed(1)}" y="${H-6}" font-size="10" fill="#a99a86" text-anchor="middle">${x.slice(5)}</text>`).join('');
+  let dots = ys.map((v,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3.5" fill="${color}"/>`).join('');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5"/>${dots}${labels}`;
+}
+function drawLine2(svg, xs, ys1, ys2){
+  const W=svg.clientWidth||720, H=150, pad=24;
+  const all=[...ys1,...ys2].filter(v=>!isNaN(v)); if(!all.length){ svg.innerHTML='<text x="10" y="80" fill="#b3a690" font-size="12">暂无足够数据</text>'; return; }
+  const min=Math.min(...all), max=Math.max(...all), span=(max-min)||1;
+  const X=i=> pad + i*(W-2*pad)/(ys1.length-1||1);
+  const Y=v=> H-pad - (v-min)/span*(H-2*pad);
+  const p1=ys1.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const p2=ys2.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const lab=xs.map((x,i)=>`<text x="${X(i).toFixed(1)}" y="${H-6}" font-size="10" fill="#a99a86" text-anchor="middle">${x.slice(5)}</text>`).join('');
+  const d1=ys1.map((v,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3.5" fill="#c98a8a"/>`).join('');
+  const d2=ys2.map((v,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3.5" fill="#8a9a82"/>`).join('');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML = `<polyline points="${p1}" fill="none" stroke="#c98a8a" stroke-width="2.5"/>${d1}<polyline points="${p2}" fill="none" stroke="#8a9a82" stroke-width="2.5"/>${d2}${lab}`;
+}
+
+$('addBtn').onclick = async ()=>{
+  $('saveOk').classList.add('hidden'); $('saveErr').classList.add('hidden');
+  const f = id=>$(id).value;
+  const rec = { id:'w'+Date.now(), 日期:f('f_date'), 体重:f('f_w'), 体脂率:num(f('f_bf')), 内脏脂肪:num(f('f_vf')),
+    脂肪量:num(f('f_fm')), 骨骼肌率:num(f('f_smR')), 骨骼肌量:num(f('f_smM')), 皮下脂肪率:num(f('f_sfR')),
+    皮下脂肪量:num(f('f_sfM')), 骨量占比:num(f('f_bR')), 骨量:num(f('f_bM')), 蛋白质量:num(f('f_pM')), 备注:'体脂秤补录' };
+  Object.keys(rec).forEach(k=>{ if(rec[k]===''||rec[k]===undefined) delete rec[k]; });
+  if(!rec.日期||!rec.体重){ $('saveErr').textContent='日期和体重是必填的～'; $('saveErr').classList.remove('hidden'); return; }
+  try{
+    const meta = await ghGET(`https://api.github.com/repos/${CTX.repo}/contents/data.json?t=${Date.now()}`, CTX.token);
+    const raw = JSON.parse(atob(meta.content.replace(/\s/g,'')));
+    const obj = await decryptObj(raw, CTX.pass);
+    obj.weights = obj.weights||[];
+    obj.weights.push(rec);
+    const out = await encryptObj(obj, CTX.pass, raw.salt, raw.iv);
+    const content = utf8ToB64(JSON.stringify(out));
+    await ghPUT(`https://api.github.com/repos/${CTX.repo}/contents/data.json`, CTX.token, {message:'补录体测记录 '+rec.日期, content, sha:meta.sha});
+    $('saveOk').textContent='已保存到云端 ✅ 刷新后可看到新记录'; $('saveOk').classList.remove('hidden');
+    CTX.obj = obj; render(obj);
+  }catch(e){ $('saveErr').textContent='保存失败：'+e.message; $('saveErr').classList.remove('hidden'); }
+};
+function num(s){ return s===''||s===undefined?undefined:parseFloat(s); }
+
+$('logoutBtn').onclick = ()=>{ CTX={}; $('mainCard').classList.add('hidden'); $('loginCard').classList.remove('hidden'); };
+</script>
+</body>
+</html>
