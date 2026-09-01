@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>用药提醒 · 9/1 内分泌方</title>
+<style>
+  :root{ --ink:#4a3b32; --soft:#7a6a5d; --line:#e8dccf; --card:#fffaf3; --accent:#c98a6b; --accent2:#8fae8b; --bg:#f6efe6; --warn:#d97757; --ok:#7ba87b; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"PingFang SC","Microsoft YaHei",sans-serif; line-height:1.6; padding:16px; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:480px; margin:0 auto; }
+  .head{ text-align:center; padding:12px 0 6px; }
+  .head h1{ margin:0; font-size:22px; letter-spacing:1px; }
+  .head .sub{ color:var(--soft); font-size:13px; margin-top:4px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin:12px 0; box-shadow:0 2px 8px rgba(120,90,60,.05); }
+  .card .label{ font-size:13px; color:var(--soft); margin-bottom:6px; }
+  .card .value{ font-size:16px; font-weight:600; }
+  .card .hint{ font-size:13px; color:var(--soft); margin-top:6px; }
+  button{ border:none; border-radius:10px; padding:12px 18px; font-size:15px; cursor:pointer; font-family:inherit; width:100%; }
+  button.primary{ background:var(--accent); color:#fff; }
+  button.primary:active{ transform:scale(.98); }
+  button.secondary{ background:#f3ead9; color:var(--ink); }
+  button.done{ background:var(--ok); color:#fff; }
+  button:disabled{ background:#ddd; color:#999; cursor:not-allowed; }
+  .progress-bar{ height:10px; background:#f3ead9; border-radius:5px; overflow:hidden; margin:8px 0; }
+  .progress-fill{ height:100%; background:var(--accent); transition:width .3s; border-radius:5px; }
+  .dose{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px dashed var(--line); }
+  .dose:last-child{ border-bottom:none; }
+  .dose .time{ font-size:15px; font-weight:500; }
+  .dose .check{ width:auto; padding:8px 14px; min-width:80px; }
+  table{ width:100%; border-collapse:collapse; margin-top:6px; font-size:13px; }
+  th,td{ border:1px solid var(--line); padding:5px 3px; text-align:center; }
+  th{ background:#f3ead9; color:var(--soft); font-weight:600; font-size:12px; }
+  tr:nth-child(even) td{ background:#fcf7ef; }
+  .form{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+  .form label{ display:flex; align-items:center; justify-content:space-between; font-size:14px; }
+  .form input{ width:65%; padding:6px 8px; border:1px solid var(--line); border-radius:6px; font-size:14px; font-family:inherit; background:#fff; }
+  details summary{ cursor:pointer; font-size:14px; color:var(--soft); padding:4px 0; }
+  .notify-status{ font-size:13px; color:var(--soft); margin-top:8px; }
+  .badge{ display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; background:#f3ead9; color:var(--soft); margin-left:6px; }
+  .foot{ text-align:center; color:var(--soft); font-size:11px; margin-top:20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>🌿 用药提醒</h1>
+    <div class="sub">9/1 龙华内分泌科草药方（代煎 12 付）</div>
+  </div>
+
+  <!-- 状态卡片 -->
+  <div class="card">
+    <div class="label">当前状态</div>
+    <div class="value" id="statusText">⏳ 药未到，等待启动</div>
+    <div class="hint" id="statusHint">药是代煎的快递到家。药到了之后点击下方"药到了，开始记录"按钮，自动从今天开始 12 天提醒和打卡。</div>
+  </div>
+
+  <!-- 启动前 -->
+  <div class="card" id="startCard">
+    <div style="font-size:13px;color:var(--soft);margin-bottom:8px;">📦 药到了吗？</div>
+    <button class="primary" id="startBtn">📦 药到了，开始记录</button>
+  </div>
+
+  <!-- 启动后 -->
+  <div id="runningUI" style="display:none">
+
+    <div class="card">
+      <div class="label">📈 疗程进度</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div style="font-size:14px;margin-top:6px;">已 <b id="dayDone">0</b> / <span id="dayTotal">12</span> 天 <span class="badge" id="dayLeftBadge"></span></div>
+    </div>
+
+    <div class="card">
+      <div class="label">📅 今日任务</div>
+      <div class="dose">
+        <div class="time">🌅 早 8:00</div>
+        <button class="check secondary" data-dose="morning">未服</button>
+      </div>
+      <div class="dose">
+        <div class="time">🌙 晚 20:00</div>
+        <button class="check secondary" data-dose="evening">未服</button>
+      </div>
+      <div class="hint">每次 180ml 温服。已服后点按钮变绿色，可再点取消。</div>
+    </div>
+
+    <div class="card">
+      <div class="label">📋 12 天打卡</div>
+      <table id="grid">
+        <thead><tr><th>日期</th><th>早 ☑</th><th>晚 ☑</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="label">🔔 浏览器通知提醒</div>
+      <div class="hint">授权后，浏览器会在早 8:00 / 晚 20:00 自动弹窗提醒（仅在页面打开时有效；关了页面就静默）。</div>
+      <button class="secondary" id="notifyBtn" style="margin-top:8px;">开启通知</button>
+      <div class="notify-status" id="notifyStatus"></div>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary>⚙️ 调整参数 / 重新开始</summary>
+        <div class="form">
+          <label>药名：<input id="medName"></label>
+          <label>共 <input id="totalDays" type="number" min="1" max="60"> 天</label>
+          <label>每日 <input id="timesPerDay" type="number" min="1" max="6"> 次</label>
+          <label>开始日期：<input id="startDate" type="date"></label>
+          <button class="secondary" id="saveSettings">💾 保存参数</button>
+          <button class="secondary" id="resetBtn" style="background:#f7e2da;">🔄 重新开始（清空所有打卡）</button>
+        </div>
+      </details>
+    </div>
+
+  </div>
+
+  <div class="foot">数据仅存本机浏览器（localStorage），不上传任何云端。<br>如换设备请先手动同步打卡记录。</div>
+</div>
+
+<script>
+const KEY='med-state-v1';
+let state={};
+try{ state=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ state={}; }
+if(!state.medName) state.medName='9/1 龙华内分泌科草药方（12付）';
+if(!state.totalDays) state.totalDays=12;
+if(!state.timesPerDay) state.timesPerDay=2;
+state.morning=state.morning||{};
+state.evening=state.evening||{};
+
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function daysBetween(a, b){ return Math.round((b - a) / 86400000); }
+
+function render(){
+  const started = !!state.startDate;
+  document.getElementById('startCard').style.display = started ? 'none' : 'block';
+  document.getElementById('runningUI').style.display = started ? 'block' : 'none';
+
+  if(!started){
+    document.getElementById('statusText').textContent='⏳ 药未到，等待启动';
+    document.getElementById('statusHint').textContent='药是代煎的快递到家。药到了之后点击下方"药到了，开始记录"按钮，自动从今天起 12 天提醒和打卡。';
+    return;
+  }
+
+  const start = new Date(state.startDate + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const elapsed = daysBetween(start, today);
+  const dayDone = Math.min(Math.max(elapsed + 1, 0), state.totalDays);
+  const dayLeft = Math.max(state.totalDays - dayDone, 0);
+  document.getElementById('dayDone').textContent = dayDone;
+  document.getElementById('dayTotal').textContent = state.totalDays;
+  document.getElementById('progressFill').style.width = (dayDone / state.totalDays * 100) + '%';
+  document.getElementById('dayLeftBadge').textContent = dayLeft > 0 ? '还剩 ' + dayLeft + ' 天' : '🎉 已完成';
+  document.getElementById('statusText').textContent = dayLeft > 0 ? '✅ 提醒进行中' : '🎉 12 天疗程已完成';
+  document.getElementById('statusHint').textContent = '开始日 ' + state.startDate + ' · 共 ' + state.totalDays + ' 天 · 每日 ' + state.timesPerDay + ' 次 · 已打卡 ' + Object.values(state.morning).filter(Boolean).length + ' 早 / ' + Object.values(state.evening).filter(Boolean).length + ' 晚';
+
+  // today dose buttons
+  const td = todayStr();
+  const mc = !!state.morning[td];
+  const ec = !!state.evening[td];
+  const mb = document.querySelector('[data-dose="morning"]');
+  const eb = document.querySelector('[data-dose="evening"]');
+  mb.textContent = mc ? '✓ 已服' : '未服';
+  mb.className = 'check ' + (mc ? 'done' : 'secondary');
+  eb.textContent = ec ? '✓ 已服' : '未服';
+  eb.className = 'check ' + (ec ? 'done' : 'secondary');
+
+  // grid
+  const tbody = document.getElementById('rows');
+  tbody.innerHTML = '';
+  for(let i = 0; i < state.totalDays; i++){
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const ds = d.toISOString().slice(0,10);
+    const label = (d.getMonth()+1) + '/' + d.getDate();
+    const mc2 = !!state.morning[ds];
+    const ec2 = !!state.evening[ds];
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + label + '</td>' +
+      '<td><input type="checkbox" data-date="' + ds + '" data-dose="morning"' + (mc2?' checked':'') + '></td>' +
+      '<td><input type="checkbox" data-date="' + ds + '" data-dose="evening"' + (ec2?' checked':'') + '></td>';
+    tbody.appendChild(tr);
+  }
+
+  // settings fields
+  document.getElementById('medName').value = state.medName;
+  document.getElementById('totalDays').value = state.totalDays;
+  document.getElementById('timesPerDay').value = state.timesPerDay;
+  document.getElementById('startDate').value = state.startDate || '';
+}
+
+// start
+document.getElementById('startBtn').addEventListener('click', () => {
+  if(!confirm('确认药已到家，今天开始记录？\n（开始后将无法"撤销"，只能"重新开始"清空）')) return;
+  state.startDate = todayStr();
+  save();
+  render();
+  alert('已启动！记得在下面开启"浏览器通知"以便提醒');
+});
+
+// today dose
+document.getElementById('runningUI').addEventListener('click', e => {
+  const btn = e.target.closest('.check');
+  if(!btn) return;
+  const dose = btn.dataset.dose;
+  const td = todayStr();
+  state[dose][td] = !state[dose][td];
+  save();
+  render();
+});
+
+// grid checkboxes
+document.getElementById('rows').addEventListener('change', e => {
+  const inp = e.target;
+  if(inp.tagName !== 'INPUT') return;
+  const ds = inp.dataset.date;
+  const dose = inp.dataset.dose;
+  state[dose][ds] = inp.checked;
+  save();
+});
+
+// settings
+document.getElementById('saveSettings').addEventListener('click', () => {
+  state.medName = document.getElementById('medName').value || state.medName;
+  state.totalDays = +document.getElementById('totalDays').value || state.totalDays;
+  state.timesPerDay = +document.getElementById('timesPerDay').value || state.timesPerDay;
+  const sd = document.getElementById('startDate').value;
+  if(sd) state.startDate = sd;
+  save();
+  render();
+  alert('已保存');
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(!confirm('⚠️ 这将清空所有打卡记录。确认？')) return;
+  state.startDate = todayStr();
+  state.morning = {};
+  state.evening = {};
+  state.lastNotifiedHour = null;
+  save();
+  render();
+  alert('已重置为今天重新开始');
+});
+
+// notification
+const notifyBtn = document.getElementById('notifyBtn');
+const notifyStatus = document.getElementById('notifyStatus');
+function updateNotifyStatus(){
+  if(!('Notification' in window)){ notifyStatus.textContent='当前浏览器不支持通知'; notifyBtn.disabled=true; return; }
+  const p = Notification.permission;
+  notifyStatus.textContent = p === 'granted' ? '✅ 已授权（页面打开时 8:00 / 20:00 会弹窗）' : p === 'denied' ? '❌ 已拒绝，需在浏览器"网站设置"中手动开启' : '⚪ 未授权';
+  notifyBtn.textContent = p === 'granted' ? '🔔 测试一下' : '🔔 开启通知';
+  notifyBtn.disabled = p === 'denied';
+}
+notifyBtn.addEventListener('click', async () => {
+  if(!('Notification' in window)) return alert('浏览器不支持通知');
+  if(Notification.permission === 'granted'){
+    new Notification('🌿 测试通知', { body: '药已到家！记得吃早/晚各 180ml 温服' });
+    return;
+  }
+  const p = await Notification.requestPermission();
+  updateNotifyStatus();
+  if(p === 'granted'){
+    new Notification('🌿 通知已开启', { body: '8:00 / 20:00 会提醒你吃药（页面打开时）' });
+  }
+});
+updateNotifyStatus();
+
+function checkNotify(){
+  if(!state.startDate) return;
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  if(h !== 8 && h !== 20) return;
+  if(m > 5) return;
+  const td = todayStr();
+  const sig = h + '_' + td;
+  if(state.lastNotifiedHour === sig) return;
+  const dose = h === 8 ? 'morning' : 'evening';
+  if(state[dose][td]) return; // 已打卡
+  state.lastNotifiedHour = sig;
+  save();
+  const title = h === 8 ? '🌿 早服提醒' : '🌿 晚服提醒';
+  const body = '该吃' + (h===8?'今天的早包':'今天的晚包') + '中药啦（180ml 温服）';
+  try{ new Notification(title, { body }); }catch(e){}
+}
+setInterval(checkNotify, 60 * 1000);
+checkNotify();
+
+render();
+</script>
+</body>
+</html>
