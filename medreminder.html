@@ -124,6 +124,7 @@ try{ state=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ state={}; }
 if(!state.medName) state.medName='9/1 龙华内分泌科草药方（12付）';
 if(!state.totalDays) state.totalDays=12;
 if(!state.timesPerDay) state.timesPerDay=2;
+if(!state.startDate) state.startDate='2026-09-08';
 state.morning=state.morning||{};
 state.evening=state.evening||{};
 
