@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>尿酸食物红绿灯</title>
+<style>
+:root{
+  --green:#2e7d52; --greenbg:#e8f6ee;
+  --yellow:#b58900; --yellowbg:#fdf6e3;
+  --red:#c0392b; --redbg:#fdecea;
+  --ink:#2b2b2b; --muted:#8a8a8a;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:#f5f3ee; color:var(--ink); padding:14px;}
+.card{max-width:430px; margin:0 auto; background:#fff; border-radius:22px; overflow:hidden; box-shadow:0 6px 24px rgba(0,0,0,.08);}
+.head{padding:18px 18px 14px; background:linear-gradient(135deg,#fff7e6,#fde9ea);}
+.head h1{margin:0; font-size:21px; letter-spacing:1px;}
+.head .sub{margin-top:6px; font-size:12.5px; color:#9a6a4f;}
+.baseline{margin:10px 16px 0; padding:10px 12px; background:#fff3e0; border-radius:14px; font-size:13px; line-height:1.6;}
+.baseline b{color:#c0392b;}
+.sec{padding:12px 16px;}
+.sec h2{display:flex; align-items:center; gap:7px; font-size:15px; margin:0 0 8px;}
+.sec.g h2{color:var(--green);} .sec.y h2{color:var(--yellow);} .sec.r h2{color:var(--red);}
+.items{display:flex; flex-wrap:wrap; gap:7px;}
+.tag{padding:5px 10px; border-radius:999px; font-size:12.5px; line-height:1.4;}
+.g .tag{background:var(--greenbg); color:var(--green);}
+.y .tag{background:var(--yellowbg); color:var(--yellow);}
+.r .tag{background:var(--redbg); color:var(--red);}
+.note{margin:6px 16px 14px; padding:11px 13px; background:#f7f7f9; border-radius:14px; font-size:12.5px; color:#555; line-height:1.6;}
+.note b{color:var(--red);}
+.foot{padding:10px 16px 18px; font-size:11px; color:var(--muted); text-align:center; line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <h1>🟢🟡🔴 尿酸食物红绿灯</h1>
+    <div class="sub">贴手机版 · 你的基线 8/30 尿酸 427（目标 &lt;360）</div>
+    <div class="baseline">💧 <b>每天白水 2000–2500ml</b>，少量多次——最便宜的降尿酸法，其余都靠它兜底</div>
+  </div>
+
+  <div class="sec g">
+    <h2>🟢 绿灯 · 放心吃（帮降尿酸）</h2>
+    <div class="items">
+      <span class="tag">白水（主力）</span>
+      <span class="tag">低脂 / 脱脂奶</span>
+      <span class="tag">无糖酸奶</span>
+      <span class="tag">樱桃</span>
+      <span class="tag">鸡蛋</span>
+      <span class="tag">冬瓜 · 黄瓜</span>
+      <span class="tag">芹菜 · 番茄</span>
+      <span class="tag">白菜 · 茄子</span>
+      <span class="tag">维C水果（不榨汁）</span>
+      <span class="tag">无糖柠檬水</span>
+    </div>
+  </div>
+
+  <div class="sec y">
+    <h2>🟡 黄灯 · 限量吃</h2>
+    <div class="items">
+      <span class="tag">红肉（猪牛羊）控量</span>
+      <span class="tag">普通鱼类控量</span>
+      <span class="tag">豆腐 / 豆浆（适量）</span>
+      <span class="tag">咖啡（白天 · 别晚）</span>
+    </div>
+  </div>
+
+  <div class="sec r">
+    <h2>🔴 红灯 · 尽量躲</h2>
+    <div class="items">
+      <span class="tag">动物内脏</span>
+      <span class="tag">浓汤 / 火锅汤</span>
+      <span class="tag">带壳海鲜</span>
+      <span class="tag">沙丁鱼 · 凤尾鱼</span>
+      <span class="tag">酒（啤酒最猛）</span>
+      <span class="tag">奶茶 / 含糖饮料</span>
+      <span class="tag">果汁（果糖）</span>
+      <span class="tag">油炸油腻</span>
+      <span class="tag">利尿剂 · 阿司匹林类药</span>
+    </div>
+  </div>
+
+  <div class="note">
+    ⭐ <b>你的双重雷</b>：① <b>海鲜 / 发物</b>——玫瑰痤疮 + 过敏 + 尿酸三重合击，一举躲；② <b>奶茶</b>——痰湿 + 尿酸 + 中药忌口三重雷，喝药期先彻底戒；③ 你 9/1 那副中药不冲突，复诊提一句「我在管尿酸」即可。
+  </div>
+
+  <div class="foot">
+    科普级管理建议，不替代医生诊断 · 是否用药 / 目标值以面诊为准<br>
+    截图设壁纸或贴冰箱都行 · 数据来自你的健康档案
+  </div>
+</div>
+</body>
+</html>
